@@ -5,7 +5,7 @@ import Link from "next/link";
 import { login } from "@/app/actions";
 import { inputCls, labelCls, btnPrimary } from "@/lib/ui";
 
-export default function LoginForm({ next }: { next: string }) {
+export default function LoginForm({ next, closed }: { next: string; closed: boolean }) {
   const [state, formAction, pending] = useActionState(login, null);
 
   return (
@@ -20,6 +20,12 @@ export default function LoginForm({ next }: { next: string }) {
         <input name="password" type="password" required autoComplete="current-password" className={inputCls} />
       </div>
 
+      <div className="text-right">
+        <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:underline">
+          Quên mật khẩu?
+        </Link>
+      </div>
+
       {state && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {state}
@@ -30,12 +36,14 @@ export default function LoginForm({ next }: { next: string }) {
         {pending ? "Đang đăng nhập..." : "Đăng nhập"}
       </button>
 
-      <p className="pt-2 text-center text-sm text-gray-500">
-        Chưa có tài khoản?{" "}
-        <Link href="/signup" className="font-medium text-blue-600 hover:underline">
-          Đăng ký
-        </Link>
-      </p>
+      {!closed && (
+        <p className="pt-2 text-center text-sm text-gray-500">
+          Chưa có tài khoản?{" "}
+          <Link href="/signup" className="font-medium text-blue-600 hover:underline">
+            Đăng ký
+          </Link>
+        </p>
+      )}
     </form>
   );
 }

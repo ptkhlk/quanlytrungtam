@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 async function requireClient() {
@@ -47,6 +48,13 @@ export async function signup(_: State, formData: FormData) {
   if (!fullName.trim()) return "Vui lòng nhập họ và tên.";
   if (password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự.";
 
+  const { data: hasProfile, error: rpcError } = await supabase.rpc(
+    "has_any_profile"
+  );
+  if (rpcError) return "Không thể đăng ký lúc này. Vui lòng thử lại sau.";
+  if (hasProfile !== false)
+    return "Đăng ký đã đóng. Chỉ tài khoản quản trị viên đầu tiên được đăng ký.";
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -56,6 +64,44 @@ export async function signup(_: State, formData: FormData) {
   if (error) return error.message;
   if (data.session) redirect("/dashboard");
   return "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.";
+}
+
+export async function forgotPassword(_: State, formData: FormData) {
+  const supabase = await createClient();
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return "Vui lòng nhập email.";
+
+  const h = await headers();
+  const origin =
+    h.get("origin") ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "http://localhost:3000";
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(
+      "/auth/update-password"
+    )}`,
+  });
+
+  if (error) return error.message;
+  return "Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.";
+}
+
+export async function updatePassword(_: State, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return "Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.";
+
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm_password") ?? "");
+  if (password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự.";
+  if (password !== confirm) return "Mật khẩu xác nhận không khớp.";
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return error.message;
+  redirect("/dashboard");
 }
 
 export async function signout() {

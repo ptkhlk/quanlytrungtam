@@ -32,6 +32,20 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Kiểm tra đã có tài khoản chưa (gọi được từ phiên ẩn danh qua RPC,
+-- vì RLS chỉ cho authenticated đọc profiles). Returning true = đã có
+-- profile -> khóa đăng ký.
+create or replace function public.has_any_profile()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.profiles);
+$$;
+
+grant execute on function public.has_any_profile() to anon, authenticated;
+
 -- ---------- HỌC VIÊN ----------
 create table if not exists public.students (
   id uuid primary key default gen_random_uuid(),

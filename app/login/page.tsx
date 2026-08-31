@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LoginForm from "@/components/login-form";
+import { isRegistrationClosed } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Đăng nhập - Quản lý Trung tâm" };
 
@@ -9,6 +10,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const { next, error } = await searchParams;
+  const closed = await isRegistrationClosed();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -31,7 +33,13 @@ export default async function LoginPage({
           </div>
         )}
 
-        <LoginForm next={next ?? "/dashboard"} />
+        {error === "recovery" && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu lại.
+          </div>
+        )}
+
+        <LoginForm next={next ?? "/dashboard"} closed={closed} />
       </div>
     </div>
   );

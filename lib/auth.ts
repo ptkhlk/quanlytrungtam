@@ -22,3 +22,10 @@ export const getUser = cache(async () => {
 
   return { user, profile: profile as Profile | null };
 });
+
+export const isRegistrationClosed = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("has_any_profile");
+  if (error) return true;
+  return data !== false;
+});
