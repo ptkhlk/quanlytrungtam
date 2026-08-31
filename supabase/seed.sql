@@ -32,12 +32,29 @@ select cl.id, s.id
 from public.classes cl cross join public.students s
 where cl.name = 'Tiếng Anh Giao tiếp A1 - Lớp 01';
 
-insert into public.sessions (class_id, session_date, start_time, end_time, topic, status)
-select cl.id, d.d, cl.start_time, cl.end_time, 'Buổi ' || row_number() over () , 'done'
+insert into public.sessions (
+    class_id,
+    session_date,
+    start_time,
+    end_time,
+    topic,
+    status
+)
+select
+    cl.id,
+    d.session_date,
+    cl.start_time,
+    cl.end_time,
+    'Buổi ' || row_number() over (order by d.session_date),
+    'done'
 from public.classes cl
-cross join lateral (select ('2026-09-07'::date + (n || ' days')::int) as d from generate_series(0, 6) n) d
-where cl.name = 'Tiếng Anh Giao tiếp A1 - Lớp 01' and extract(dow from d.d) = 1;
-
+cross join lateral (
+    select '2026-09-07'::date + n as session_date
+    from generate_series(0, 6) as gs(n)
+) d
+where cl.name = 'Tiếng Anh Giao tiếp A1 - Lớp 01'
+  and extract(dow from d.session_date) = 1;
+  
 insert into public.attendance (session_id, student_id, status)
 select se.id, cs.student_id, 'present'
 from public.sessions se
