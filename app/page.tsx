@@ -3,5 +3,6 @@ import { getUser } from "@/lib/auth";
 
 export default async function Home() {
   const session = await getUser();
-  redirect(session ? "/dashboards" : "/logins");
+  redirect(session ? "/dashboard" : "/login");
+
 }
